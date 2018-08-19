@@ -1,4 +1,4 @@
-""" transform txt source file to [key: [list]]
+""" transform txt source file to [key: [set]]
 """
 
 def transform(input_path):
