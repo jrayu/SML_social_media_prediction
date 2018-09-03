@@ -13,7 +13,10 @@ def _in_degree(input_path, output_path, set_dict):
         pairs = [r.split() for r in reader.readlines()]
 
         for p in pairs:
-            score = math.log(len(set_dict[p[1]]))
+            if p[1] not in set_dict:
+                score = 0
+            else:
+                score = math.log(len(set_dict[p[1]])) / 10
 
             print(count)
             count += 1
@@ -30,11 +33,10 @@ if __name__ == '__main__':
 
     set_dict = read_train_file('../output/inbound_collect.txt')
 
-    _in_degree('../output/fakedataprop/fake_origin_bit.txt',
-            '../output/indegree/prop/indegree_origin_bit.txt',
+    _in_degree('../output/fakedataprop/fake_origin_clm.txt',
+            '../output/indegree/prop/indegree_clm.txt',
             set_dict)
 
-    # test
     _in_degree('../output/test.txt',
-            '../output/indegree/indegree_test_bit.txt',
+            '../output/indegree/indegree_test_clm.txt',
             set_dict)

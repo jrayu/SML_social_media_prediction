@@ -2,49 +2,50 @@
 local path
 """
 
+import random
+import numpy as np
 from utils.reader import read_train_file
 
-def _calc_local_path(key, set_path, A=0.8):
+
+def _random_pick(cand, count=80):
+    if len(cand) < count:
+        return cand
+    return set(np.random.choice(list(cand), count, replace=False))
+
+
+def _calc_local_path(key, set_dict, A=0.01, T=2):
     """
     calc local path
     : param key: id pairs of two nodes
     : param set_dict: dicionary storing all nodes and their out neighbors
     : param A: constant used when calc neighbors at different depths
     """
-    count = 0
     source, sink = key
 
-    if source not in set_path:
-        return 0
+    upbound = _random_pick(set_dict[source] - {sink}) | _random_pick(set_dict[sink])
 
-    # if sink in set_path[source]:
-    #     count += 1 / len(set_path[source])
+    def _dfs(node, visited, level):
+        if level > T:
+            return 0
 
-    first_neighbor = set_path[source]
-    second_neighbor = set()
-    # visited = {source}
+        score = 0
+        if sink in set_dict[node]:
+            score = A ** level
+        
+        cands = set_dict[node] & upbound
+        cands -= visited
 
-    for n in first_neighbor:
-        if n == sink:
-            continue
-        # if n in visited:
-        #     continue
-        # visited.add(n)
-        if n in set_path:
-            if sink in set_path[n]:
-                count += 1 / len(set_path[n])
-            second_neighbor |= set_path[n]
-    
-    for n in second_neighbor:
-        if n == sink:
-            continue
-        # if n in visited:
-        #     continue
-        # visited.add(n)
-        if n in set_path and sink in set_path[n]:
-            count += A / len(set_path[n])
+        for c in cands:
+            score += _dfs(c, {node} | visited, level + 1)
+        
+        return score
 
-    return count    
+    score = 0
+    neighbors = set_dict[source] & upbound
+    for s in neighbors:
+        score += _dfs(s, {source, sink}, 1)
+
+    return score
 
 
 def _local_path(input_path, output_path, set_dict):
@@ -56,10 +57,11 @@ def _local_path(input_path, output_path, set_dict):
 
         for p in pairs:
             key = (p[0], p[1])
-            # score = _calc_sim(key, {}, set_dict, 0, set())
+
             score = _calc_local_path(key, set_dict)
 
-            print(count)
+            if not count % 10:
+                print(count, score)
             count += 1
 
             info = key + (str(score), p[-1])
@@ -71,34 +73,16 @@ def _local_path(input_path, output_path, set_dict):
 
 
 if __name__ == '__main__':
-    # train
-    # local_path('../output/fake_data.txt',
-    #         '../output/localpath/localpath_02.txt',
-    #         '../data/train.txt')
 
-    # local_path('../output/fakedata/fake_data_a.txt',
-    #         '../output/localpath/localpath_a.txt',
-    #         '../data/train.txt')
+    set_dict = read_train_file('../output/collect.txt')
 
-    # local_path('../output/fakedata/fake_data_b.txt',
-    #         '../output/localpath/localpath_b.txt',
-    #         '../data/train.txt')
+    print('Read set ready')
 
-    # local_path('../output/fakedata/fake_data_c.txt',
-    #         '../output/localpath/localpath_c.txt',
-    #         '../data/train.txt')
-
-    # local_path('../output/fakedata/fake_data_d.txt',
-    #         '../output/localpath/localpath_d.txt',
-    #         '../data/train.txt')
-
-    set_dict = read_train_file('../data/train.txt')
-
-    _local_path('../output/fakedataprop/fake_origin_bit.txt',
-            '../output/localpath/prop/localpath_origin_bit.txt',
+    _local_path('../output/fakedataprop/fake_origin_clm.txt',
+            '../output/localpath/prop/localpath_clm_10.txt',
             set_dict)
 
-    # test
+    # # test
     _local_path('../output/test.txt',
-            '../output/localpath/localpath_test_bit.txt',
+            '../output/localpath/localpath_test_clm_10.txt',
             set_dict)

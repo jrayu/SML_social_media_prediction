@@ -171,7 +171,7 @@ def _fake_true_with_prop(set_dict, output_path, size=2000, C=0.2):
 
     i, j = 0, 0
 
-    while i < prop1 or j < prop2:
+    while i < size:
         source = keys[randint(0, length - 1)]
 
         if not set_dict[source]:
@@ -185,12 +185,8 @@ def _fake_true_with_prop(set_dict, output_path, size=2000, C=0.2):
         if (source, sink) in result:
             continue
 
-        if i < prop1 and sink in key_set:
-            i += 1
-            result.add((source, sink))
-        elif j < prop2 and sink not in key_set:
-            j += 1
-            result.add((source, sink))
+        result.add((source, sink))
+        i += 1
 
     with open(output_path, 'w') as writer:
         for r in result:
@@ -216,24 +212,19 @@ def _fake_false_with_prop(set_dict, sink_dict, output_path, size=2000, C=0.2):
 
     i, j = 0, 0
 
-    while i < prop1 or j < prop2:
+    while i < size:
         source = keys[randint(0, length - 1)]
 
         if not set_dict[source]:
             continue
 
-
         sink = sinks[randint(0, sink_length - 1)]
 
-        if (source, sink) in result or sink in set_dict[source]:
+        if (source, sink) in result or sink in set_dict[source] or source == sink:
             continue
 
-        if i < prop1 and sink in key_set:
-            result.add((source, sink))
-            i += 1
-        elif j < prop2 and sink not in key_set:
-            result.add((source, sink))
-            j += 1
+        result.add((source, sink))
+        i += 1
     
     with open(output_path, 'w') as writer:
         for r in result:
@@ -277,15 +268,15 @@ def _merge_fake_data(true_path, false_path, output_path):
 
 
 if __name__ == '__main__':
-    true_path = '../output/fakedataprop/true_origin_bit.txt'
-    false_path = '../output/fakedataprop/false_origin_bit.txt'
-    final_path = '../output/fakedataprop/fake_origin_bit.txt'
+    true_path = '../output/fakedataprop/true_origin_kim.txt'
+    false_path = '../output/fakedataprop/false_origin_kim.txt'
+    final_path = '../output/fakedataprop/fake_origin_kim.txt'
 
-    set_dict = read_train_file('../data/train.txt')
-    sink_dict = read_train_file('../output/inbound_collect.txt')
+    set_dict = read_train_file('../output/outbound_collect_tie.txt')
+    sink_dict = read_train_file('../output/inbound_collect_tie.txt')
 
-    _fake_true_with_prop(set_dict, true_path, size=40000)
-    _fake_false_with_prop(set_dict, sink_dict, false_path, size=40000)
+    _fake_true_with_prop(set_dict, true_path, size=10000)
+    _fake_false_with_prop(set_dict, sink_dict, false_path, size=10000)
 
     _merge_fake_data(true_path=true_path,
                     false_path=false_path,

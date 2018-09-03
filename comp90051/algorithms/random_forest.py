@@ -1,12 +1,16 @@
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold
-from sklearn.metrics import roc_curve, auc, accuracy_score
+from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold, GridSearchCV
+from sklearn.metrics import roc_curve, auc, accuracy_score, classification_report
 from utils.reader import read_from_txt
 from algorithms.cross_evaluate import cross_evaluate
 
+
 def _random_forest(x_train, y_train, x_test=None, y_test=None):
-    clf = RandomForestClassifier(min_samples_split=10, n_estimators=5000)
+    clf = RandomForestClassifier(n_estimators=1000, n_jobs=-1,
+    # class_weight={0: 1, 1: 2.4}
+                                 )
+    # clf = LogisticRegression(C=1)
     clf.fit(x_train, y_train)
 
     if x_test is None or y_test is None:
@@ -22,44 +26,6 @@ def _random_forest(x_train, y_train, x_test=None, y_test=None):
     fpr, tpr, thresholds = roc_curve(y_test, scores)
     area = auc(fpr, tpr)
     print('auc', area)
-
-    return clf
-
-
-def random_forest_split(x, y):
-
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=99999)
-    clf = RandomForestClassifier(min_samples_split=10, n_estimators=5000)
-    clf.fit(x_train, y_train)
-
-
-    y_pred = clf.predict(x_test)
-    scores = clf.predict_proba(x_test)[:, 1]
-
-    print('accuracy:', accuracy_score(y_test, y_pred))
-
-    print(y_pred[y_pred==1].size)
-
-    fpr, tpr, thresholds = roc_curve(y_test, scores)
-    area = auc(fpr, tpr)
-    print('auc', area)
-
-
-
-    t2 = read_from_txt('../output/jaccard/jaccard_test_huge.txt')['score']
-    t5 = read_from_txt('../output/simrank/simrank_test_huge.txt')['score']
-    t6 = read_from_txt('../output/localpath/localpath_test_huge.txt')['score']
-    t7 = read_from_txt('../output/propflow/propflow_test_huge.txt')['score']
-    t8 = read_from_txt('../output/jaccardneighbor/jaccard_neighbor_test_huge.txt')['score']
-    t9 = read_from_txt('../output/outdegree/outdegree_test_huge.txt')['score']
-    t10 = read_from_txt('../output/indegree/indegree_test_huge.txt')['score']
-    # t11 = read_from_txt('../output/adar/adar_test.txt')['score']
-
-    test = np.c_[t2, t5, t6, t7, t8, t9, t10]
-
-    y_test = clf.predict(test)
-
-    print(y_test[y_test==1].size)
 
     return clf
 
@@ -83,100 +49,85 @@ def _read_data(path):
     return combined_features, labels
 
 
-def _cross_evaluate():
-    data_path = [
-        '../output/jaccard/prop/jaccard_origin_huge.txt',
-        '../output/simrank/prop/simrank_origin_huge_04.txt',
-        '../output/localpath/prop/localpath_origin_huge_02.txt',
-        '../output/propflow/prop/propflow_origin_huge.txt',
-        '../output/jaccardneighbor/prop/jaccard_neighbor_origin_huge_04.txt',
-        # '../output/outdegree/prop/outdegree_origin_huge.txt',
-        # '../output/indegree/prop/indegree_origin_huge.txt',
-        ]
+data_path = [
+    # '../output/simrank/prop/simrank_clm_02.txt',
+    '../output/propflow/prop/propflow_clm_08.txt',
+    # '../output/localpath/prop/localpath_clm_09.txt',
+    # '../output/jaccardneighbor/prop/jaccard_neighbor_clm_02.txt',
+    # '../output/jaccardneighbor/prop/jaccard_neighbor_inbound_clm_02.txt',
+    # '../output/consineneighbor/prop/consine_neighbor_inbound_clm.txt',
+    ]
 
 
-    combined_features, labels = _read_data(data_path)
-
-    cross_evaluate(_random_forest, combined_features, labels, split=4)
-
+test_path = [
+    # '../output/simrank/simrank_test_clm_02.txt',
+    '../output/propflow/propflow_test_clm_08.txt',
+    # '../output/localpath/localpath_test_clm_09.txt',
+    # '../output/jaccardneighbor/jaccard_neighbor_test_clm_02.txt',
+    # '../output/jaccardneighbor/jaccard_neighbor_inbound_test_clm_02.txt',
+    # '../output/consineneighbor/consine_neighbor_inbound_test_clm.txt',
+    ]
+    
 
 def _split_evaluate():
-    data_path = [
-        '../output/jaccard/prop/jaccard_origin_huge.txt',
-        '../output/simrank/prop/simrank_origin_huge.txt',
-        '../output/localpath/prop/localpath_origin_huge.txt',
-        '../output/propflow/prop/propflow_origin_huge.txt',
-        '../output/jaccardneighbor/prop/jaccard_neighbor_origin_huge.txt',
-        '../output/outdegree/prop/outdegree_origin_huge.txt',
-        '../output/indegree/prop/indegree_origin_huge.txt',
-        # '../output/adar/prop/adar_origin_huge.txt',
-        ]
-
     combined_features, labels = _read_data(data_path)
+    print(np.mean(combined_features[:, 0]))
 
-    clf = random_forest_split(combined_features, labels)
+    test_features, test_labels = _read_data(test_path)
+    print(np.mean(test_features[:, 0]))
 
-    clf = RandomForestClassifier(min_samples_split=10, n_estimators=5000)
+    # pca = PCA(svd_solver='full', n_components='mle')
+    # combined_features = pca.fit_transform(combined_features)
 
-    cv = StratifiedKFold(n_splits=6)
+    # clf = random_forest_split(combined_features, labels)
+
+    clf = RandomForestClassifier(n_estimators=1000,
+                                 oob_score=True, n_jobs=-1,
+                                # class_weight={0: 1, 1: 2.4}
+                                 )
+
+    #nclf = LogisticRegression(C=1)
+    cv = StratifiedKFold(n_splits=4)
 
     for train, test in cv.split(combined_features, labels):
         clf.fit(combined_features[train], labels[train]).predict_proba(combined_features[test])
+        # print(clf.oob_score_)
+        y_predict = clf.predict(combined_features[test])
+        print(y_predict[y_predict==1].size)
+        print(y_predict[y_predict==0].size)
+        print(classification_report(labels[test], y_predict))
+
         proba = clf.predict_proba(combined_features[test])
         y_pred = clf.predict(combined_features[test])
         fpr, tpr, thresholds = roc_curve(labels[test], proba[:, 1])
+        print(np.mean(proba[:, 1]))
         area = auc(fpr, tpr)
         print('accuracy:', accuracy_score(labels[test], y_pred))
         print('auc', area)
 
-    # scores = cross_val_score(clf, combined_features, labels, cv=10)
-    # print(scores)
         
-
 def _run_for_test(output_path):
-    data_path = [
-        '../output/jaccard/prop/jaccard_origin_huge.txt',
-        '../output/simrank/prop/simrank_origin_huge.txt',
-        '../output/localpath/prop/localpath_origin_huge.txt',
-        '../output/propflow/prop/propflow_origin_huge.txt',
-        '../output/jaccardneighbor/prop/jaccard_neighbor_origin_huge.txt',
-        '../output/outdegree/prop/outdegree_origin_huge.txt',
-        '../output/indegree/prop/indegree_origin_huge.txt',
-        # '../output/adar/prop/adar_origin_huge.txt',
-        ]
 
     train_features, train_labels = _read_data(data_path)
     clf = _random_forest(train_features, train_labels)
 
 
-    test_path = [
-        '../output/jaccard/jaccard_test_huge.txt',
-        '../output/simrank/simrank_test_huge.txt',
-        '../output/localpath/localpath_test_huge.txt',
-        '../output/propflow/propflow_test_huge.txt',
-        '../output/jaccardneighbor/jaccard_neighbor_test_huge.txt',
-        '../output/outdegree/outdegree_test_huge.txt',
-        '../output/indegree/indegree_test_huge.txt',
-        # '../output/adar/adar_test.txt',
-        ]
-    
     test_features, test_labels = _read_data(test_path)
 
     y_predict = clf.predict(test_features)
 
     print(y_predict[y_predict==1].size)
+    print(y_predict[y_predict==0].size)
 
     scores = clf.predict_proba(test_features)[:, 1]
 
+    print(np.mean(scores))
     with open(output_path, 'w') as writer:
         writer.write('Id,Prediction\n')
         for i, s in enumerate(scores):
-            writer.write(f'{i+1},{str(s)}\n')
-
+            writer.write(f'{i+1},{s}\n')
 
 
 if __name__ == '__main__':
-    # random_forest('../output/knn/knn.txt')
-    # _cross_evaluate()
     _split_evaluate()
-    _run_for_test('../output/test/prediction_ot.csv')
+    _run_for_test('../output/result/prediction_f.csv')

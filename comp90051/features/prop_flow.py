@@ -3,73 +3,59 @@ prop flow
 """
 
 import random
+import numpy as np
 from utils.reader import read_train_file
 
+
 def _random_pick(cand, count=20):
-    if len(cand) <= count + 10:
+    if len(cand) < count:
         return cand
-    
-    cand_list = list(cand)
+    return set(np.random.choice(list(cand), count, replace=False))
 
-    length = len(cand)
-    result = set()
 
-    while len(result) < count:
-        c = cand_list[random.randint(0, length - 1)] 
-        if c not in result:
-            result.add(c)
-    
-    return c
-
-def _calc_prop_flow(key, set_dict, max_depth=6):
+def _calc_prop_flow(key, set_dict, max_depth=3):
 
     source, sink = key
 
-    # no outbound
-    if source not in set_dict:
-        return 0
+    upbound = _random_pick(set_dict[source]) | _random_pick(set_dict[sink])
+    upbound |= {sink}
 
-    def _dfs(node, prev, visited, score, depth):
+    def _dfs(node, weight, visited, score, depth):
+
+        if node == sink:
+            return score * 1 / weight
         
         if depth == max_depth:
             return 0
 
-        if node not in set_dict:
+        if node not in set_dict or not set_dict[node]:
             return 0
 
-        # hit sink node
-        if sink in set_dict[node]:
-            return (score * 1 / len(set_dict[prev])) * 1 / len(set_dict[node])
+        cands = set_dict[node] & upbound - visited
 
-        # hit visited nodes
-        if set_dict[node] & visited:
+        if not cands:
             return 0
 
         new_score = 0
-        score = score * 1 / len(set_dict[prev]) 
+        score = score * 1 / weight
 
-        cands = _random_pick(set_dict[node])
-        for s in cands:
-            if s == prev:
-                continue
-            new_score += _dfs(s, node, visited | {prev}, score, depth + 1)
+        for c in cands:
+            new_score += _dfs(c, len(cands), visited | {node}, score, depth + 1)
         
         return new_score
     
     score = 0
 
-    # if sink in set_dict[source]:
-    #     score += 1 / len(set_dict[source])
-
-    for s in set_dict[source]:
+    neighbor = set_dict[source] & upbound
+    for s in neighbor:
         if s == sink:
             continue
-        score += _dfs(s, source, set(), 1, 0)
+        score += _dfs(s, len(neighbor), {source}, 1, 0)
     
     return score
 
 
-def _prop_flow(input_path, output_path, set_dict):
+def _prop_flow(input_path, output_path, set_dict, is_inbound=False):
 
     result = []
     count = 0
@@ -78,9 +64,12 @@ def _prop_flow(input_path, output_path, set_dict):
 
         for p in pairs:
             key = (p[0], p[1])
-            score = _calc_prop_flow(key, set_dict)
+            if is_inbound:
+                score = _calc_prop_flow(key[::-1], set_dict)
+            else:
+                score = _calc_prop_flow(key, set_dict)
 
-            print(count)
+            print(count, score)
             count += 1
 
             info = key + (str(score), p[-1])
@@ -92,34 +81,14 @@ def _prop_flow(input_path, output_path, set_dict):
 
 
 if __name__ == '__main__':
-    # train
-    # prop_flow('../output/fake_data.txt',
-    #         '../output/propflow/propflow_02.txt',
-    #         '../data/train.txt')
 
-    # prop_flow('../output/fakedata/fake_data_a.txt',
-    #         '../output/propflow/propflow_a.txt',
-    #         '../data/train.txt')
+    set_dict = read_train_file('../output/collect.txt')
 
-    # prop_flow('../output/fakedata/fake_data_b.txt',
-    #         '../output/propflow/propflow_b.txt',
-    #         '../data/train.txt')
-
-    # prop_flow('../output/fakedata/fake_data_c.txt',
-    #         '../output/propflow/propflow_c.txt',
-    #         '../data/train.txt')
-
-    # prop_flow('../output/fakedata/fake_data_d.txt',
-    #         '../output/propflow/propflow_d.txt',
-    #         '../data/train.txt')
-
-    set_dict = read_train_file('../data/train.txt')
-
-    _prop_flow('../output/fakedataprop/fake_origin_bit.txt',
-            '../output/propflow/prop/propflow_origin_bit.txt',
+    _prop_flow('../output/fakedataprop/fake_origin_clm.txt',
+            '../output/propflow/prop/propflow_clm_08.txt',
             set_dict)
 
     # test
     _prop_flow('../output/test.txt',
-            '../output/propflow/propflow_test_bit.txt',
+            '../output/propflow/propflow_test_clm_08.txt',
             set_dict)

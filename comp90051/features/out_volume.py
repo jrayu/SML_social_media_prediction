@@ -5,7 +5,7 @@ import math
 from utils.reader import read_train_file
 
 
-def _out_degree(input_path, output_path, set_dict):
+def _out_degree(input_path, output_path, set_dict, all_dict):
 
     result = []
     count = 0
@@ -31,14 +31,14 @@ def _out_degree(input_path, output_path, set_dict):
 
 if __name__ == '__main__':
 
-    set_dict = read_train_file('../data/train.txt')
-    # all_dict = read_train_file('../output/collect.txt')
+    set_dict = read_train_file('../output/inbound_collect.txt')
+    # all_dict = read_train_file('../output/collect_zeo.txt')
 
-    _out_degree('../output/fakedataprop/fake_origin_clm.txt',
-            '../output/outdegree/prop/outdegree_clm.txt',
-            set_dict)
+    _out_degree('../output/fakedataprop/fake_origin_huge.txt',
+            '../output/outvolume/prop/outvolume_origin_huge.txt',
+            set_dict, set_dict)
 
     # test
     _out_degree('../output/test.txt',
-            '../output/outdegree/outdegree_test_clm.txt',
-            set_dict)
+            '../output/outvolume/outvolume_test_huge.txt',
+            set_dict, set_dict)

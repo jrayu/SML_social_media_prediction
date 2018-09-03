@@ -1,33 +1,44 @@
+"""
+neighbor similarity
+"""
+
+
 import math
 import random
 from utils.reader import simple_read, read_with_split, read_train_file
 
-def score(input_path, set_path, output_path='../output/adar.txt', output=True):
-    input_pairs = simple_read(input_path)
+# legacy function
+def score(input_path, set_path, output_path='../output/jaccard.txt', output=True):
+    outbound_dict = read_with_split('../data/train.txt')
     set_dict = read_with_split(set_path)
+    input_pairs = simple_read(input_path)
     result = []
 
-    for key, value, sym in input_pairs:
+    count = 1
+    for key, value, sym in input_pairs: 
         key_set = set_dict[key]
         value_set = set_dict[value]
 
-        intersection = key_set & value_set
 
         score = 0
-        for common in intersection:
-            if not set_dict[common]:
-               continue 
-            score += 1 / math.log(len(set_dict[common]) + 1)
 
-        print(len(result))
+        if key not in outbound_dict or not outbound_dict[key]:
+            result.append(' '.join((key, value, str(score), sym)) + '\n')
+            continue
 
-        result.append((key, value, str(score), sym))
+        for neighbor in outbound_dict[key]:
+            neighbor_set = set_dict[neighbor]
+            score += len(neighbor_set & value_set) / len(neighbor_set) * len(value_set)
+        score = score / len(outbound_dict[key])
 
-    if output:
-        with open(output_path, 'w') as writer:
-            for r in result:
-                writer.write(' '.join(r) + '\n')
-    return result
+        result.append(' '.join((key, value, str(score), sym)) + '\n')
+
+    with open(output_path, 'w') as writer:
+        for r in result:
+            writer.write(' '.join((key, value, str(score), sym)) + '\n')
+            count += 1
+            print(count)
+
 
 def _calc_neighbor_score_03(pairs, set_dict, R=30):
     source, sink = pairs
@@ -48,42 +59,27 @@ def _calc_neighbor_score_03(pairs, set_dict, R=30):
     if length < R + 5:
         for s in sources:
             if s == source:
+                # print('here')
                 continue
-            if not set_dict[s]:
-                continue
-            intersect = source_set & set_dict[s]
-            if not intersect:
-                continue
-            for c in intersect:
-                if not set_dict[c] or c == sink:
-                    continue
-                score += 1 / (math.log(len(set_dict[c]) + 1))
-            # score = score / len(intersect)
-        return score / length
+            cand1 = source_set - {sink} if source in set_dict[sink] else source_set
+            cand2 = set_dict[s] - {sink} if source in set_dict[sink] else set_dict[s]
+            score += math.atan(len(cand1) * len(cand2))
+        return math.log(score + 1) / 100
 
     visited = set()
 
     while i < R:
         s = sources[random.randint(0, length - 1)]
-        if source == s or s in visited:
+        if sink == s or s in visited:
+            # print('here')
             continue
         visited.add(s)
-        if not set_dict[s]:
-            i += 1
-            continue
-        intersect = source_set & set_dict[s]
-        if not intersect:
-            i += 1
-            continue
-        for c in intersect:
-            if not set_dict[c] or c == sink:
-                i += 1
-                continue
-            score += 1 / (math.log(len(set_dict[c]) + 1))
-        # score = score / len(intersect)
+        cand1 = source_set - {sink} if source in set_dict[sink] else source_set
+        cand2 = set_dict[s] - {sink} if source in set_dict[sink] else set_dict[s]
+        score += math.atan(len(cand1) * len(cand2))
         i += 1
     
-    return score / R
+    return math.log(score + 1) / 100
 
 
 def _calc_neighbor_score(pairs, set_dict, R=30):
@@ -91,6 +87,9 @@ def _calc_neighbor_score(pairs, set_dict, R=30):
     score = 0
 
     if source not in set_dict or not set_dict[source]:
+        return 0
+
+    if sink not in set_dict or not set_dict[sink]:
         return 0
     
     sink_set = set_dict[sink]
@@ -102,40 +101,27 @@ def _calc_neighbor_score(pairs, set_dict, R=30):
     if length < R + 5:
         for s in sinks:
             if s == sink:
+                # print('here')
                 continue
-            if not set_dict[s]:
-                continue
-            intersect = sink_set & set_dict[s]
-            if not intersect:
-                continue
-            for c in intersect:
-                if not set_dict[c] or c == source:
-                    continue
-                score += 1 / (math.log(len(set_dict[c]) + 1))
-        return score / length
+            cand1 = sink_set - {source} if sink in set_dict[source] else sink_set
+            cand2 = set_dict[s] - {source} if sink in set_dict[source] else set_dict[s]
+            score += math.atan(len(cand1) * len(cand2))
+        return math.log(score + 1) / 100
 
     visited = set()
 
     while i < R:
         s = sinks[random.randint(0, length - 1)]
         if sink == s or s in visited:
+            # print('here')
             continue
         visited.add(s)
-        if not set_dict[s]:
-            i += 1
-            continue
-        intersect = sink_set & set_dict[s]
-        if not intersect:
-            i += 1
-            continue
-        for c in intersect:
-            if not set_dict[c] or c == source:
-                i += 1
-                continue
-            score += 1 / (math.log(len(set_dict[c]) + 1))
+        cand1 = sink_set - {source} if sink in set_dict[source] else sink_set
+        cand2 = set_dict[s] - {source} if sink in set_dict[source] else set_dict[s]
+        score += math.atan(len(cand1) * len(cand2))
         i += 1
     
-    return score / R
+    return math.log(score + 1) / 100
     
 
 def _neighbor_score_random(input_path, output_path, neighbor_dict, is_inbound=False):
@@ -168,9 +154,12 @@ def _simple_score(input_path, output_path, set_dict, output=True):
     result = []
 
     for key, value, sym in input_pairs:
-        key_set = set_dict[key]
-        value_set = set_dict[value]
-        score = len(key_set & value_set) / len(key_set | value_set)
+        if key not in set_dict or value not in set_dict:
+            score = 0
+        else:
+            key_set = set_dict[key]
+            value_set = set_dict[value]
+            score = len(key_set) * len(value_set)
 
         print(len(result))
 
@@ -200,20 +189,20 @@ if __name__ == '__main__':
 
     set_dict = read_train_file('../output/collect.txt')
 
-    # _simple_score('../output/fakedataprop/fake_origin_huge.txt',
-    #                       '../output/jaccard/prop/jaccard_origin_huge.txt', set_dict)
-
-    # _neighbor_score_random('../output/fakedataprop/fake_origin_huge.txt',
-    #                       '../output/adarneighbor/prop/adar_neighbor_origin_huge.txt', set_dict)
+    # _simple_score('../output/fakedataprop/fake_origin_zeo.txt',
+    #                       '../output/jaccard/prop/jaccard_origin_zeo.txt', set_dict)
 
     _neighbor_score_random('../output/fakedataprop/fake_origin_clm.txt',
-                          '../output/adarneighbor/prop/adar_inbound_neighbor_clm.txt', set_dict)
+                          '../output/neighbor/prop/neighbor_clm.txt', set_dict)
+
+    # _neighbor_score_random('../output/fake.txt',
+    #                       '../output/neighbor/prop/neighbor_inbound.txt', set_dict, is_inbound=True)
 
     # _simple_score('../output/test.txt',
-    #                       '../output/jaccard/jaccard_test_huge.txt', set_dict)
+    #                       '../output/jaccard/jaccard_test_zeo.txt', set_dict)
 
     _neighbor_score_random('../output/test.txt',
-                          '../output/adarneighbor/adar_neighbor_test_clm.txt', set_dict)
+                          '../output/neighbor/neighbor_test_clm.txt', set_dict)
 
     # _neighbor_score_random('../output/test.txt',
-    #                       '../output/adarneighbor/adar_inbound_neighbor_test_huge.txt', set_dict, is_inbound=True)
+    #                       '../output/neighbor/neighbor_inbound_test_huge.txt', set_dict, is_inbound=True)

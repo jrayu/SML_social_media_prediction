@@ -1,11 +1,11 @@
 """
-out degree
+in volume
 """
 import math
 from utils.reader import read_train_file
 
 
-def _out_degree(input_path, output_path, set_dict):
+def _in_degree(input_path, output_path, set_dict):
 
     result = []
     count = 0
@@ -13,10 +13,10 @@ def _out_degree(input_path, output_path, set_dict):
         pairs = [r.split() for r in reader.readlines()]
 
         for p in pairs:
-            if p[0] not in set_dict:
+            if p[1] not in set_dict:
                 score = 0
             else:
-                score = math.log(len(set_dict[p[0]]) + 1)
+                score = math.log(len(set_dict[p[1]]) + 1)
 
             print(count)
             count += 1
@@ -32,13 +32,12 @@ def _out_degree(input_path, output_path, set_dict):
 if __name__ == '__main__':
 
     set_dict = read_train_file('../data/train.txt')
-    # all_dict = read_train_file('../output/collect.txt')
 
-    _out_degree('../output/fakedataprop/fake_origin_clm.txt',
-            '../output/outdegree/prop/outdegree_clm.txt',
+    _in_degree('../output/fakedataprop/fake_origin_huge.txt',
+            '../output/involume/prop/involume_origin_huge.txt',
             set_dict)
 
     # test
-    _out_degree('../output/test.txt',
-            '../output/outdegree/outdegree_test_clm.txt',
+    _in_degree('../output/test.txt',
+            '../output/involume/involume_test_huge.txt',
             set_dict)

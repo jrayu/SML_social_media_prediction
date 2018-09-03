@@ -1,8 +1,42 @@
-""" Jaccard similarity
+"""
+consine similarity
 """
 
+import math
 import random
 from utils.reader import simple_read, read_with_split, read_train_file
+
+# legacy function
+def score(input_path, set_path, output_path='../output/jaccard.txt', output=True):
+    outbound_dict = read_with_split('../data/train.txt')
+    set_dict = read_with_split(set_path)
+    input_pairs = simple_read(input_path)
+    result = []
+
+    count = 1
+    for key, value, sym in input_pairs: 
+        key_set = set_dict[key]
+        value_set = set_dict[value]
+
+
+        score = 0
+
+        if key not in outbound_dict or not outbound_dict[key]:
+            result.append(' '.join((key, value, str(score), sym)) + '\n')
+            continue
+
+        for neighbor in outbound_dict[key]:
+            neighbor_set = set_dict[neighbor]
+            score += len(neighbor_set & value_set) / len(neighbor_set | value_set)
+        score = score / len(outbound_dict[key])
+
+        result.append(' '.join((key, value, str(score), sym)) + '\n')
+
+    with open(output_path, 'w') as writer:
+        for r in result:
+            writer.write(' '.join((key, value, str(score), sym)) + '\n')
+            count += 1
+            print(count)
 
 
 def _calc_neighbor_score_03(pairs, set_dict, R=30):
@@ -30,7 +64,7 @@ def _calc_neighbor_score_03(pairs, set_dict, R=30):
             if not set_dict[s]:
                 continue
             intersect = len(source_set & set_dict[s]) - minus
-            score += intersect / len(source_set | set_dict[s]) 
+            score += intersect / (len(source_set) * len(set_dict[s]))
         return score / length
 
     visited = set()
@@ -44,7 +78,7 @@ def _calc_neighbor_score_03(pairs, set_dict, R=30):
             i += 1
             continue
         intersect = len(source_set & set_dict[s]) - minus
-        score += intersect / len(source_set | set_dict[s]) 
+        score += intersect / (len(source_set) * len(set_dict[s]))
         i += 1
     
     return score / R
@@ -75,7 +109,7 @@ def _calc_neighbor_score(pairs, set_dict, R=30):
             if not set_dict[s]:
                 continue
             intersect = len(sink_set & set_dict[s]) - minus
-            score += intersect / len(sink_set | set_dict[s]) 
+            score += intersect / math.sqrt(len(sink_set) * len(set_dict[s]))
         return score / length   
 
     visited = set()
@@ -89,7 +123,7 @@ def _calc_neighbor_score(pairs, set_dict, R=30):
             i += 1
             continue
         intersect = len(sink_set & set_dict[s]) - minus
-        score += intersect / len(sink_set | set_dict[s]) 
+        score += intersect / math.sqrt(len(sink_set) * len(set_dict[s]))
         i += 1
     
     return score / R
@@ -131,7 +165,7 @@ def _simple_score(input_path, output_path, set_dict, output=True):
         else:
             key_set = set_dict[key]
             value_set = set_dict[value]
-            score = len(key_set & value_set) / len(key_set | value_set)
+            score = len(key_set & value_set) / len(key_set) * len(value_set)
 
         print(len(result))
 
@@ -147,18 +181,18 @@ def _simple_score(input_path, output_path, set_dict, output=True):
 if __name__ == '__main__':
     set_dict = read_train_file('../output/collect.txt')
 
-    # _simple_score('../output/fakedataprop/fake_origin_clm.txt', '../output/jaccard/prop/jaccard_clm.txt', set_dict)
-
-    # _neighbor_score_random('../output/fakedataprop/fake_origin_clm.txt',
-    #                       '../output/jaccardneighbor/prop/jaccard_neighbor_clm_02.txt', set_dict)
+    # _simple_score('../output/fakedataprop/fake_origin_clm.txt', '../output/consine/prop/consine_clm.txt', set_dict)
 
     _neighbor_score_random('../output/fakedataprop/fake_origin_clm.txt',
-                          '../output/jaccardneighbor/prop/jaccard_neighbor_inbound_clm_02.txt', set_dict, is_inbound=True)
+                          '../output/consineneighbor/prop/consine_neighbor_clm.txt', set_dict)
 
-    # _simple_score('../output/test.txt', '../output/jaccard/jaccard_test_clm.txt', set_dict)
+    # _neighbor_score_random('../output/fakedataprop/fake_origin_clm.txt',
+    #                       '../output/consineneighbor/prop/consine_neighbor_inbound_clm.txt', set_dict, is_inbound=True)
 
-    # _neighbor_score_random('../output/test.txt',
-    #                       '../output/jaccardneighbor/jaccard_neighbor_test_clm_02.txt', set_dict)
+    # _simple_score('../output/test.txt', '../output/consine/consine_test_clm.txt', set_dict)
 
     _neighbor_score_random('../output/test.txt',
-                          '../output/jaccardneighbor/jaccard_neighbor_inbound_test_clm_02.txt', set_dict, is_inbound=True)
+                          '../output/consineneighbor/consine_neighbor_test_clm.txt', set_dict)
+
+    # _neighbor_score_random('../output/test.txt',
+    #                       '../output/consineneighbor/consine_neighbor_inbound_test_clm.txt', set_dict, is_inbound=True)
