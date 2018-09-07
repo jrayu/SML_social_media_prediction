@@ -31,57 +31,14 @@ def readCSV(path):
     
 def transform(input_path):
     result = {}
-    namecard=[]
-    maxfollow=0
-    minfollow=200
     with open(input_path) as reader:
         for line in reader:
             ids = line.split()
             result[ids[0]] = set(ids[1:])
-            namecard.append(ids[0])
-            l=len(ids[1:])
-            if maxfollow<l:
-                maxfollow=l
-            if minfollow>l:
-                minfollow=l
-    print("the maximum number of accounts a user follows is {}".format(maxfollow))
-    print("likewise, the minimum is {}".format(minfollow))
-    return result,namecard
+    return result
 #'''
 
-def put2TXT(data,filename):
-    filename+=".txt"
-    myfile=open(filename,'w')
-    for key in data:
-        row=key
-        keyset=data[key]
-        for item in keyset:
-            row+=" "+item
-        myfile.write(row)
-        myfile.write('\n')
-    myfile.close()
-    print("write to txt complete")
-    
-# put data (complete set)
-def put2CSV(data,features,filename):
-    with open(filename,'w',newline='') as outcsv:
-        writer=csv.writer(outcsv)
-        writer.writerow(features)
-        for key in data:
-            row=[key]
-            keyset=data[key]
-            for item in keyset:
-                row.append(item)
-            writer.writerow(row)
-    print("write in csv complete")
-    
-# put data (complete set)
-def putlist2CSV(data,features,filename):
-    with open(filename,'w',newline='') as outcsv:
-        writer=csv.writer(outcsv)
-        writer.writerow(features)
-        writer.writerows(data)
-    print("write in csv complete")
+
     
 # update by feature
 def addFeature(newfeature,name,purpose):
@@ -126,11 +83,13 @@ def inBound(data):
     print("i={}".format(i))
     return dt
 
-'''
+
+
+'''###############################################################################
     Aimed to make a training set in the form of source-sink-y
     including 10000 real data (True positives) and
     10000 fake data (True negatives and False negatives)
-    '''
+    #############################################################################'''
 def makeTrainingset():
     outBPath="train.txt"
     inBPath="followers.txt"
@@ -214,11 +173,13 @@ def makenegative(outB,sources,sinks):
     return negativeset
 
 
+
 if __name__ == '__main__':
-    testingset=makeTestingset()
+    txt2CSV("test-public")
+    '''testingset=makeTestingset()
     ft=['ID',"source",'sink','y']
     putlist2CSV(testingset,ft,"testdata")
-    '''_
+    _
     path='tryout'
     readCSV(path)
 

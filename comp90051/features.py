@@ -1,15 +1,22 @@
-# -*- coding: cp936 -*-
+ # -*- coding: cp936 -*-
 import math
 import numpy as np
-from utils import queue
-
+from utils import queue, combine_dict, transform
+import multiprocessing
+import collections
+import operator
+import networkx as nx
 '''input data, node a b, return the score from a to b'''
 def cosineExtract(data, node_1,node_2):
     set_1=data[node_1]
     set_2=data[node_2]
-    same_item=len(commonNeighbours(data,node_1,node_2))
+    same_item=cnExtract(data,node_1,node_2)
     cosine=same_item/(len(set_1)*len(set_2))
-    return cosine
+    if node_1=="1001158":
+        print("cn:{}".format(same_item))
+        print("nm1:{}".format(len(set_1)))
+        print("nm2:{}".format(len(set_2)))
+    return math.log1p(cosine)
         
 '''returns a list of common neighbours between two nodes'''
 def commonNeighbours(data,node_1,node_2):
@@ -18,7 +25,7 @@ def commonNeighbours(data,node_1,node_2):
     return set_1 & set_2
 
 def cnExtract(data,node_1,node_2):
-    return len(commonNeighbours(data,node_1,node_2))
+    return math.log1p(len(commonNeighbours(data,node_1,node_2)))
 
 def adar(data,node_1,node_2):
     common=commonNeighbours(data,node_1,node_2)
@@ -28,12 +35,12 @@ def adar(data,node_1,node_2):
         if not friendset==None:
             if not len(friendset)<2:
                 adar+=1/(math.log(len(friendset)))
-    return adar
+    return math.log1p(adar)
 
 def jaccard(data,node_1,node_2):
     set_1=data[node_1]
     set_2=data[node_2]
-    return (len(set_1 & set_2)/len(set_1 | set_2))
+    return math.log1p((len(set_1 & set_2)/len(set_1 | set_2)))
 
 def neighbourDifference(data,node_1,node_2):
     set_1=data[node_1]
@@ -57,12 +64,16 @@ def followerDifference(data,node_1,node_2):
 
     '''
 def BFS(outbdata,inbdata,start,goal):
+    if start not in outbdata:
+        return None
     midset1=outbdata[start]
 
     # a direct link
-    if goal in midset1:
-        return [start,goal],1
+    #if goal in midset1:
+    #    return [start,goal],1
     # path of 3 nodes
+    if goal not in inbdata:
+        return None
     midset2=inbdata[goal]
     intersect=midset1 & midset2
     if len(intersect)>0:
@@ -72,57 +83,78 @@ def BFS(outbdata,inbdata,start,goal):
     else:
         return None
 
-    # path of 4 nodes
-'''
-    nodelist=queue()
-    nodelist.push(([node_1],node_1))
-    visited=[]
-    while not nodelist.isEmpty():
-        # pop the first element in list, usually one with the least steps
-        steps,expandNode=nodelist.pop()
-        # if node_2 is reached, return the steps taken to it
-        if expandNode==node_2:
-            return steps,len(steps)-1
-        
-
-        # if length of step is more than 6 which indicates its
-        # sequential nodes are at least 7, node_1 and 2 are treated
-        # as irrelevant
-        if len(steps)>3:
-            return [],99999
-
-        # to expand the node
-        if expandNode in data and expandNode not in visited:
-            followset=data[expandNode]
-            for sqtNode in followset:
-                nodelist.push((steps+[sqtNode],sqtNode))
-        
-        visited.append(expandNode)'''
-
-def subGraph(outBoundDict,inBoundDict,path):
-    fanset=set()
-    N=[]
-    subgraph=set()
-    if len(path)==3:
-        source,midset,sink=path
-        N=[source,sink]+list(midset)
+def getfromdict(node,data):
+    if node in data:
+        return data[node]
     else:
-        source,sink=path
-        N=[source,sink]
-    for node in N:
-        if node in outBoundDict:
-            followset=outBoundDict[node]
-            followset=randomtrim(followset)
-        if node in inBoundDict:
-            fanset=inBoundDict[node]
-            fanset=randomtrim(fanset)
-        subgraph=subgraph|followset|fanset|{node}
-    return subgraph
+        return set()
+    
+def subGraph(outbdata,inbdata,node_1,node_2,w):
+    set1=set()
+    set2=set()
+    if node_1 in outbdata:
+        set1 = makeset(set1,outbdata[node_1])
+    if node_1 in inbdata:
+        set1 = makeset(set1,inbdata[node_1])
+    if node_2 in outbdata:
+        set2 = makeset(set2,outbdata[node_2])
+    if node_2 in inbdata:
+        set2 = makeset(set2,inbdata[node_2])
+    union=set1|set2|{node_1}|{node_2}
+    g=nx.DiGraph()
+    for node in union:
+        node_sink=getfromdict(node,outbdata)
+        node_source=getfromdict(node,inbdata)
+        w_out=1/(len(node_sink)+w*len(node_source))
+        w_in=w/(len(node_sink)+w*len(node_source))
+        int_src=node_source & union
+        int_snk=node_sink & union
+        for sink in int_snk:
+            g.add_edge(node,sink,weight=w_out)
+        for source in int_src:
+            g.add_edge(node,source,weight=w_in)
+    if g.has_edge(node_1,node_2):
+        g.remove_edge(node_1,node_2)
+    return g
+
+def makeset(set1,set2,th=10000):
+    if len(set2)>th:
+        set2=np.random.choice(list(set2),10000)
+        set2=set(set2)
+    return set1 | set2
+        
+def edgerank(outbdata,inbdata,node1,node2,w=1,d=0.5,iterations=3):
+    g=subGraph(outbdata,inbdata,node1,node2,w)
+    if g.size()==0:
+        return 0
+    print("size of subgraph: {}".format(g.size()))
+    adj=nx.to_pandas_adjacency(g)
+    print(adj)
+    loc1=adj.columns.get_loc(node1)
+    loc2=adj.columns.get_loc(node2)
+    
+    rows,cols=adj.shape
+    print("shape: {},{}".format(rows,cols))
+    new=adj.values
+    for row in range(rows):
+        if sum(new[row,:]) !=0:
+            new[row,:]=new[row,:]/sum(new[row,:])
+    x_0=np.zeros(rows)
+    x_0[loc1]=1
+    x=x_0
+    print(x)
+    for i in range(iterations):
+        x=(1-d)*x_0+d*np.dot(new,x)
+        print(x)
+    return x[loc2]
+    
+
 
 def randomtrim(data):
     if len(data)>100:
         data=np.random.choice(list(data),100)
     return set(data)
+
 
 '''
     Return the local rank of node by traversing subgraph centered with it.
@@ -156,6 +188,7 @@ def pagerank(outBoundDict,inBoundDict,start,goal):
             rankDict[node]=fanrank
     return rankDict[goal]
 
+'''
 def adjMatrix(outBoundDict,subgraph):
     N=len(subgraph)
     A=np.zeros((N,N))
@@ -172,10 +205,10 @@ def adjMatrix(outBoundDict,subgraph):
             A[i]=A[i]/sum(A[i])
     
     return A
-    
+    '''
 '''
     Returns list of possibilities of it'''
-def edgerank(outBoundDict,inBoundDict,start,goal):
+'''def edgerank(outBoundDict,inBoundDict,start,goal):
     bfs=BFS(outBoundDict,inBoundDict,start,goal)
     if bfs==None:
         return 0
@@ -202,5 +235,24 @@ def edgerank(outBoundDict,inBoundDict,start,goal):
         x_last=x
         x=(1-d)*x0+np.dot(d*(A+w*np.transpose(A)),x_last)
     print("edgerank completed for {}-{}".format(start,goal))
-    return x[tgindex]
+    return x[tgindex]'''
     
+
+def self_deg(outbdata,inbdata,node1,node2):
+    result=[0,0,0,0]
+    if node1 in outbdata:
+        result[0]=len(outbdata[node1])
+    if node1 in inbdata:
+        result[1]=len(inbdata[node1])
+    if node2 in outbdata:
+        result[2]=len(outbdata[node2])
+    if node2 in inbdata:
+        result[3]=len(inbdata[node2])
+    return result
+
+'''if __name__=="__main__":
+    outbdata=transform("data/train.txt")
+    inbdata=transform("data/followers.txt")
+    combinedata=combine_dict(outbdata,inbdata)
+    subGraph(combinedata,outbdata,"1866350","725231")
+'''
