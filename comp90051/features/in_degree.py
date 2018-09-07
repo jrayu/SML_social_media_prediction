@@ -13,10 +13,10 @@ def _in_degree(input_path, output_path, set_dict):
         pairs = [r.split() for r in reader.readlines()]
 
         for p in pairs:
-            if p[1] not in set_dict:
+            if p[1] not in set_dict or not set_dict[p[1]]:
                 score = 0
             else:
-                score = math.log(len(set_dict[p[1]])) / 10
+                score = len(set_dict[p[1]])
 
             print(count)
             count += 1
@@ -31,7 +31,7 @@ def _in_degree(input_path, output_path, set_dict):
 
 if __name__ == '__main__':
 
-    set_dict = read_train_file('../output/inbound_collect.txt')
+    set_dict = read_train_file('../data/train.txt')
 
     _in_degree('../output/fakedataprop/fake_origin_clm.txt',
             '../output/indegree/prop/indegree_clm.txt',

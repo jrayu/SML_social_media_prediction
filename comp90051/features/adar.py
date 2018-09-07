@@ -58,7 +58,6 @@ def _calc_neighbor_score_03(pairs, set_dict, R=30):
                 if not set_dict[c] or c == sink:
                     continue
                 score += 1 / (math.log(len(set_dict[c]) + 1))
-            # score = score / len(intersect)
         return score / length
 
     visited = set()
@@ -77,10 +76,8 @@ def _calc_neighbor_score_03(pairs, set_dict, R=30):
             continue
         for c in intersect:
             if not set_dict[c] or c == sink:
-                i += 1
                 continue
             score += 1 / (math.log(len(set_dict[c]) + 1))
-        # score = score / len(intersect)
         i += 1
     
     return score / R
@@ -99,6 +96,11 @@ def _calc_neighbor_score(pairs, set_dict, R=30):
     sinks = list(set_dict[source])
     length = len(sinks)
 
+    minus = 1 if sink in sinks else 0
+
+    if length - minus == 0:
+        return 0
+
     if length < R + 5:
         for s in sinks:
             if s == sink:
@@ -112,7 +114,7 @@ def _calc_neighbor_score(pairs, set_dict, R=30):
                 if not set_dict[c] or c == source:
                     continue
                 score += 1 / (math.log(len(set_dict[c]) + 1))
-        return score / length
+        return score / (length - minus)
 
     visited = set()
 
@@ -130,7 +132,6 @@ def _calc_neighbor_score(pairs, set_dict, R=30):
             continue
         for c in intersect:
             if not set_dict[c] or c == source:
-                i += 1
                 continue
             score += 1 / (math.log(len(set_dict[c]) + 1))
         i += 1
@@ -207,13 +208,13 @@ if __name__ == '__main__':
     #                       '../output/adarneighbor/prop/adar_neighbor_origin_huge.txt', set_dict)
 
     _neighbor_score_random('../output/fakedataprop/fake_origin_clm.txt',
-                          '../output/adarneighbor/prop/adar_inbound_neighbor_clm.txt', set_dict)
+                          '../output/adarneighbor/prop/adar_neighbor_clm_02.txt', set_dict)
 
     # _simple_score('../output/test.txt',
     #                       '../output/jaccard/jaccard_test_huge.txt', set_dict)
 
     _neighbor_score_random('../output/test.txt',
-                          '../output/adarneighbor/adar_neighbor_test_clm.txt', set_dict)
+                          '../output/adarneighbor/adar_neighbor_test_clm_02.txt', set_dict)
 
     # _neighbor_score_random('../output/test.txt',
     #                       '../output/adarneighbor/adar_inbound_neighbor_test_huge.txt', set_dict, is_inbound=True)

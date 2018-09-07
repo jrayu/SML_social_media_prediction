@@ -16,7 +16,7 @@ def _out_degree(input_path, output_path, set_dict):
             if p[0] not in set_dict:
                 score = 0
             else:
-                score = math.log(len(set_dict[p[0]]) + 1)
+                score = len(set_dict[p[0]])
 
             print(count)
             count += 1
@@ -31,7 +31,7 @@ def _out_degree(input_path, output_path, set_dict):
 
 if __name__ == '__main__':
 
-    set_dict = read_train_file('../data/train.txt')
+    set_dict = read_train_file('../output/collect.txt')
     # all_dict = read_train_file('../output/collect.txt')
 
     _out_degree('../output/fakedataprop/fake_origin_clm.txt',

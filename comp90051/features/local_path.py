@@ -13,7 +13,7 @@ def _random_pick(cand, count=80):
     return set(np.random.choice(list(cand), count, replace=False))
 
 
-def _calc_local_path(key, set_dict, A=0.01, T=2):
+def _calc_local_path(key, set_dict, A=0.02, T=2):
     """
     calc local path
     : param key: id pairs of two nodes
@@ -79,10 +79,10 @@ if __name__ == '__main__':
     print('Read set ready')
 
     _local_path('../output/fakedataprop/fake_origin_clm.txt',
-            '../output/localpath/prop/localpath_clm_10.txt',
+            '../output/localpath/prop/localpath_clm_11.txt',
             set_dict)
 
     # # test
     _local_path('../output/test.txt',
-            '../output/localpath/localpath_test_clm_10.txt',
+            '../output/localpath/localpath_test_clm_11.txt',
             set_dict)

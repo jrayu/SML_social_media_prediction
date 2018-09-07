@@ -154,6 +154,7 @@ def check_unique(input_path):
     print(size)
     return size
 
+all_dict = read_train_file('../data/train.txt')
 
 def _fake_true_with_prop(set_dict, output_path, size=2000, C=0.2):
     """ From analysis only 18.8% of sink nodes in test-files appear as source nodes in
@@ -162,14 +163,10 @@ def _fake_true_with_prop(set_dict, output_path, size=2000, C=0.2):
     """
         
     keys = list(set_dict.keys())
-    key_set = set(keys)
     length = len(keys)
     result = set()
 
-    prop1 = int(size * C)
-    prop2 = size - prop1
-
-    i, j = 0, 0
+    i = 0
 
     while i < size:
         source = keys[randint(0, length - 1)]
@@ -183,6 +180,9 @@ def _fake_true_with_prop(set_dict, output_path, size=2000, C=0.2):
         sink = cands[randint(0, cand_size - 1)]
 
         if (source, sink) in result:
+            continue
+
+        if sink in set_dict and len(all_dict[sink]) < 20:
             continue
 
         result.add((source, sink))
@@ -200,17 +200,13 @@ def _fake_false_with_prop(set_dict, sink_dict, output_path, size=2000, C=0.2):
     """
 
     keys = list(set_dict.keys())
-    key_set = set(keys)
     sinks = list(sink_dict.keys())
 
     length = len(keys)
     sink_length = len(sinks)
     result = set()
 
-    prop1 = int(size * C)
-    prop2 = size - prop1
-
-    i, j = 0, 0
+    i = 0
 
     while i < size:
         source = keys[randint(0, length - 1)]
@@ -221,6 +217,9 @@ def _fake_false_with_prop(set_dict, sink_dict, output_path, size=2000, C=0.2):
         sink = sinks[randint(0, sink_length - 1)]
 
         if (source, sink) in result or sink in set_dict[source] or source == sink:
+            continue
+        
+        if sink in set_dict and len(all_dict[sink]) < 20:
             continue
 
         result.add((source, sink))
@@ -268,12 +267,12 @@ def _merge_fake_data(true_path, false_path, output_path):
 
 
 if __name__ == '__main__':
-    true_path = '../output/fakedataprop/true_origin_kim.txt'
-    false_path = '../output/fakedataprop/false_origin_kim.txt'
-    final_path = '../output/fakedataprop/fake_origin_kim.txt'
+    true_path = '../output/fakedataprop/true_origin_kim_03.txt'
+    false_path = '../output/fakedataprop/false_origin_kim_03.txt'
+    final_path = '../output/fakedataprop/fake_origin_kim_03.txt'
 
-    set_dict = read_train_file('../output/outbound_collect_tie.txt')
-    sink_dict = read_train_file('../output/inbound_collect_tie.txt')
+    set_dict = read_train_file('../output/outbound_collect_kim.txt')
+    sink_dict = read_train_file('../output/inbound_collect_kim.txt')
 
     _fake_true_with_prop(set_dict, true_path, size=10000)
     _fake_false_with_prop(set_dict, sink_dict, false_path, size=10000)

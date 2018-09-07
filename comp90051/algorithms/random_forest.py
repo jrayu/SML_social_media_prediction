@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold, GridSearchCV
-from sklearn.metrics import roc_curve, auc, accuracy_score, classification_report
+from sklearn.metrics import roc_curve, auc, accuracy_score, classification_report, roc_auc_score
 from utils.reader import read_from_txt
 from algorithms.cross_evaluate import cross_evaluate
 
@@ -51,43 +51,46 @@ def _read_data(path):
 
 data_path = [
     # '../output/simrank/prop/simrank_clm_02.txt',
-    '../output/propflow/prop/propflow_clm_08.txt',
-    # '../output/localpath/prop/localpath_clm_09.txt',
+    # '../output/propflow/prop/propflow_clm.txt',
+    # '../output/localpath/prop/localpath_clm_11.txt',
     # '../output/jaccardneighbor/prop/jaccard_neighbor_clm_02.txt',
     # '../output/jaccardneighbor/prop/jaccard_neighbor_inbound_clm_02.txt',
-    # '../output/consineneighbor/prop/consine_neighbor_inbound_clm.txt',
+    '../output/consineneighbor/prop/consine_neighbor_inbound_kim.txt',
+    # '../output/shortestpath/prop/shortestpath_clm_03.txt',
     ]
 
+kim_path = [
+    # '../output/simrank/prop/simrank_clm_02.txt',
+    # '../output/propflow/prop/propflow_clm.txt',
+    # '../output/localpath/prop/localpath_clm_11.txt',
+    # '../output/jaccardneighbor/prop/jaccard_neighbor_kim_02.txt',
+    # '../output/jaccardneighbor/prop/jaccard_neighbor_inbound_clm_02.txt',
+    '../output/consineneighbor/prop/consine_neighbor_inbound_clm.txt',
+    # '../output/shortestpath/prop/shortestpath_clm_03.txt',
+    ]
 
 test_path = [
     # '../output/simrank/simrank_test_clm_02.txt',
-    '../output/propflow/propflow_test_clm_08.txt',
-    # '../output/localpath/localpath_test_clm_09.txt',
-    # '../output/jaccardneighbor/jaccard_neighbor_test_clm_02.txt',
+    # '../output/propflow/propflow_test_clm.txt',
+    # '../output/localpath/localpath_test_clm_11.txt',
+    # '../output/jaccardneighbor/jaccard_neighbor_test_kim_02.txt',
     # '../output/jaccardneighbor/jaccard_neighbor_inbound_test_clm_02.txt',
-    # '../output/consineneighbor/consine_neighbor_inbound_test_clm.txt',
+    '../output/consineneighbor/consine_neighbor_inbound_test_kim.txt',
+    # '../output/shortestpath/shortestpath_test_clm_03.txt',
     ]
     
 
 def _split_evaluate():
     combined_features, labels = _read_data(data_path)
-    print(np.mean(combined_features[:, 0]))
 
-    test_features, test_labels = _read_data(test_path)
-    print(np.mean(test_features[:, 0]))
-
-    # pca = PCA(svd_solver='full', n_components='mle')
-    # combined_features = pca.fit_transform(combined_features)
-
-    # clf = random_forest_split(combined_features, labels)
+    test_features, test_labels = _read_data(kim_path)
 
     clf = RandomForestClassifier(n_estimators=1000,
                                  oob_score=True, n_jobs=-1,
-                                # class_weight={0: 1, 1: 2.4}
                                  )
 
-    #nclf = LogisticRegression(C=1)
-    cv = StratifiedKFold(n_splits=4)
+    cv = StratifiedKFold(n_splits=10)
+    areas = []
 
     for train, test in cv.split(combined_features, labels):
         clf.fit(combined_features[train], labels[train]).predict_proba(combined_features[test])
@@ -99,11 +102,16 @@ def _split_evaluate():
 
         proba = clf.predict_proba(combined_features[test])
         y_pred = clf.predict(combined_features[test])
-        fpr, tpr, thresholds = roc_curve(labels[test], proba[:, 1])
         print(np.mean(proba[:, 1]))
-        area = auc(fpr, tpr)
+        area = roc_auc_score(labels[test], proba[:, 1])
+        areas.append(area)
         print('accuracy:', accuracy_score(labels[test], y_pred))
         print('auc', area)
+    
+    print('average', sum(areas) / len(areas))
+
+    test_proba = clf.predict_proba(test_features)
+    print('test: ', roc_auc_score(test_labels, test_proba[:, 1]))
 
         
 def _run_for_test(output_path):
@@ -130,4 +138,4 @@ def _run_for_test(output_path):
 
 if __name__ == '__main__':
     _split_evaluate()
-    _run_for_test('../output/result/prediction_f.csv')
+    _run_for_test('../output/result/prediction_j.csv')

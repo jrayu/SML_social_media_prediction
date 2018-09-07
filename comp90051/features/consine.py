@@ -183,16 +183,16 @@ if __name__ == '__main__':
 
     # _simple_score('../output/fakedataprop/fake_origin_clm.txt', '../output/consine/prop/consine_clm.txt', set_dict)
 
-    _neighbor_score_random('../output/fakedataprop/fake_origin_clm.txt',
-                          '../output/consineneighbor/prop/consine_neighbor_clm.txt', set_dict)
-
     # _neighbor_score_random('../output/fakedataprop/fake_origin_clm.txt',
-    #                       '../output/consineneighbor/prop/consine_neighbor_inbound_clm.txt', set_dict, is_inbound=True)
+    #                       '../output/consineneighbor/prop/consine_neighbor_clm.txt', set_dict)
+
+    _neighbor_score_random('../output/fakedataprop/fake_origin_kim_02.txt',
+                          '../output/consineneighbor/prop/consine_neighbor_inbound_kim_02.txt', set_dict, is_inbound=True)
 
     # _simple_score('../output/test.txt', '../output/consine/consine_test_clm.txt', set_dict)
 
-    _neighbor_score_random('../output/test.txt',
-                          '../output/consineneighbor/consine_neighbor_test_clm.txt', set_dict)
+    # _neighbor_score_random('../output/test.txt',
+    #                       '../output/consineneighbor/consine_neighbor_test_clm.txt', set_dict)
 
     # _neighbor_score_random('../output/test.txt',
-    #                       '../output/consineneighbor/consine_neighbor_inbound_test_clm.txt', set_dict, is_inbound=True)
+    #                       '../output/consineneighbor/consine_neighbor_inbound_test_kim.txt', set_dict, is_inbound=True)

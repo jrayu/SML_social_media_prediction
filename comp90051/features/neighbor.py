@@ -159,7 +159,7 @@ def _simple_score(input_path, output_path, set_dict, output=True):
         else:
             key_set = set_dict[key]
             value_set = set_dict[value]
-            score = len(key_set) * len(value_set)
+            score = len(key_set | value_set)
 
         print(len(result))
 
@@ -189,20 +189,20 @@ if __name__ == '__main__':
 
     set_dict = read_train_file('../output/collect.txt')
 
-    # _simple_score('../output/fakedataprop/fake_origin_zeo.txt',
-    #                       '../output/jaccard/prop/jaccard_origin_zeo.txt', set_dict)
-
-    _neighbor_score_random('../output/fakedataprop/fake_origin_clm.txt',
+    _simple_score('../output/fakedataprop/fake_origin_clm.txt',
                           '../output/neighbor/prop/neighbor_clm.txt', set_dict)
+
+    # _neighbor_score_random('../output/fakedataprop/fake_origin_clm.txt',
+    #                       '../output/neighbor/prop/neighbor_clm.txt', set_dict)
 
     # _neighbor_score_random('../output/fake.txt',
     #                       '../output/neighbor/prop/neighbor_inbound.txt', set_dict, is_inbound=True)
 
-    # _simple_score('../output/test.txt',
-    #                       '../output/jaccard/jaccard_test_zeo.txt', set_dict)
-
-    _neighbor_score_random('../output/test.txt',
+    _simple_score('../output/test.txt',
                           '../output/neighbor/neighbor_test_clm.txt', set_dict)
+
+    # _neighbor_score_random('../output/test.txt',
+    #                       '../output/neighbor/neighbor_test_clm.txt', set_dict)
 
     # _neighbor_score_random('../output/test.txt',
     #                       '../output/neighbor/neighbor_inbound_test_huge.txt', set_dict, is_inbound=True)

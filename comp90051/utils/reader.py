@@ -66,6 +66,9 @@ def transform(input_path, output_dir):
             ids = line.split()
             key, values = ids[0], ids[1:]
             outs = set(values)
+            if len(outs) < 5:
+                continue
+            
             out_bound[key] = outs
 
             if key in mixed_bound:
@@ -84,29 +87,23 @@ def transform(input_path, output_dir):
                     mixed_bound[out] = {key}
 
     with open(output_dir, 'w') as writer:
-        for k, v in mixed_bound.items():
-            line = k + ' ' + ' '.join(list(v))
+        for k in out_bound.keys():
+            cand = []
+            vs = list(out_bound[k])
+            for v in vs:
+                if len(mixed_bound[v]) >= 7:
+                    cand.append(v)
+            if cand:
+                line = k + ' ' + ' '.join(cand)
+                writer.write(line + '\n')
+
+
+    with open('../output/inbound_collect_kim.txt', 'w') as writer:
+        for k in in_bound.keys():
+            if len(mixed_bound[k]) < 7:
+                continue
+            line = k + ' ' + ' '.join(in_bound[k])
             writer.write(line + '\n')
-
-    # with open(output_dir, 'w') as writer:
-    #     for k in out_bound.keys():
-    #         cand = []
-    #         vs = list(out_bound[k])
-    #         for v in vs:
-    #             if len(mixed_bound[v]) >= 7:
-    #                 cand.append(v)
-    #         if cand:
-    #             line = k + ' ' + ' '.join(cand)
-    #         # print(line)
-    #             writer.write(line + '\n')
-
-    # with open('../output/inbound_collect_tie.txt', 'w') as writer:
-    #     for k in in_bound.keys():
-    #         if len(mixed_bound[k]) < 7:
-    #             continue
-    #         line = k + ' ' + ' '.join(in_bound[k])
-    #         # print(line)
-    #         writer.write(line + '\n')
 
     # return in_bound, out_bound, mixed_bound
 
@@ -179,21 +176,12 @@ def read_train_file(input_path):
     return set_dict
 
 
-def tmp():
-    with open('../output/friendmeasure/friendmeasure_test_clm_06.txt', 'w') as writer:
-        with open('../output/friendmeasure/friendmeasure_test_clm_03.txt') as reader:
-            for r in reader:
-                s = r.split()
-                s = s[:2] + [str(float(s[2]) / 100)] + s[3:]
-                writer.write(' '.join(s) + '\n')
-
-
 if __name__ == '__main__':
     # transform_test_data('../data/test-public.txt', '../data/train.txt')
-    # transform('../data/train.txt', '../output/outbound_collect_tie.txt')
-    # unique_entries('../output/outbound_collect_tie.txt')
-    # unique_entries('../output/inbound_collect_tie.txt')
+    transform('../data/train.txt', '../output/outbound_collect_kim.txt')
+    unique_entries('../output/outbound_collect_kim.txt')
+    unique_entries('../output/inbound_collect_kim.txt')
 
-    transform('../output/outbound_collect_tie.txt', '../output/collect_tie.txt')
-    unique_entries('../output/collect_tie.txt')
+    # transform('../output/outbound_collect_kim.txt', '../output/collect_kim.txt')
+    # unique_entries('../output/collect_kim.txt')
     # tmp()

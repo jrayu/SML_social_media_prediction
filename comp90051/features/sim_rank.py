@@ -39,7 +39,7 @@ def _calc_sim_random_work(key, set_dict, R=40, T=10, C=0.8):
             
             # Hit intersection, stop this walk
             ratio = len(set_dict[n1] & set_dict[n2]) / len(set_dict[n1] | set_dict[n2])
-            if ratio:
+            if ratio > 0.15:
                 # k = len(set_dict[n1] & set_dict[n2]) / len(set_dict[n1] | set_dict[n2])
                 score += C ** j
                 break
@@ -91,13 +91,13 @@ def sim_rank(input_path, output_path, set_dict):
 
 if __name__ == '__main__':
 
-    set_dict = read_train_file('../data/train.txt')
+    set_dict = read_train_file('../output/inbound_collect.txt')
 
     sim_rank('../output/fakedataprop/fake_origin_clm.txt',
-            '../output/simrank/prop/simrank_clm_03.txt',
+            '../output/simrank/prop/simrank_clm_04.txt',
             set_dict)
 
     # test
     sim_rank('../output/test.txt',
-            '../output/simrank/simrank_test_clm_03.txt',
+            '../output/simrank/simrank_test_clm_04.txt',
             set_dict)

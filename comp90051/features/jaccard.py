@@ -66,7 +66,10 @@ def _calc_neighbor_score(pairs, set_dict, R=30):
     sinks = list(set_dict[source])
     length = len(sinks)
 
-    minus = 1 if sink in set_dict[source] else 0
+    minus = 1 if source in sink_set else 0
+
+    if length - minus == 0:
+        return 0
 
     if length < R + 5:
         for s in sinks:
@@ -75,8 +78,11 @@ def _calc_neighbor_score(pairs, set_dict, R=30):
             if not set_dict[s]:
                 continue
             intersect = len(sink_set & set_dict[s]) - minus
-            score += intersect / len(sink_set | set_dict[s]) 
-        return score / length   
+            union = len(sink_set | set_dict[s]) - minus
+            if union == 0:
+                continue
+            score += intersect / union
+        return score / (length - minus) 
 
     visited = set()
 
@@ -89,7 +95,10 @@ def _calc_neighbor_score(pairs, set_dict, R=30):
             i += 1
             continue
         intersect = len(sink_set & set_dict[s]) - minus
-        score += intersect / len(sink_set | set_dict[s]) 
+        union = len(sink_set | set_dict[s]) - minus
+        if union == 0:
+            continue
+        score += intersect / union
         i += 1
     
     return score / R
@@ -149,16 +158,16 @@ if __name__ == '__main__':
 
     # _simple_score('../output/fakedataprop/fake_origin_clm.txt', '../output/jaccard/prop/jaccard_clm.txt', set_dict)
 
-    # _neighbor_score_random('../output/fakedataprop/fake_origin_clm.txt',
-    #                       '../output/jaccardneighbor/prop/jaccard_neighbor_clm_02.txt', set_dict)
+    _neighbor_score_random('../output/fakedataprop/fake_origin_kim.txt',
+                          '../output/jaccardneighbor/prop/jaccard_neighbor_kim.txt', set_dict)
 
-    _neighbor_score_random('../output/fakedataprop/fake_origin_clm.txt',
-                          '../output/jaccardneighbor/prop/jaccard_neighbor_inbound_clm_02.txt', set_dict, is_inbound=True)
+    # _neighbor_score_random('../output/fakedataprop/fake_origin_kim.txt',
+    #                       '../output/jaccardneighbor/prop/jaccard_neighbor_inbound_kim.txt', set_dict, is_inbound=True)
 
     # _simple_score('../output/test.txt', '../output/jaccard/jaccard_test_clm.txt', set_dict)
 
     # _neighbor_score_random('../output/test.txt',
-    #                       '../output/jaccardneighbor/jaccard_neighbor_test_clm_02.txt', set_dict)
+    #                       '../output/jaccardneighbor/jaccard_neighbor_test_kim_02.txt', set_dict)
 
-    _neighbor_score_random('../output/test.txt',
-                          '../output/jaccardneighbor/jaccard_neighbor_inbound_test_clm_02.txt', set_dict, is_inbound=True)
+    # _neighbor_score_random('../output/test.txt',
+    #                       '../output/jaccardneighbor/jaccard_neighbor_inbound_test_kim.txt', set_dict, is_inbound=True)

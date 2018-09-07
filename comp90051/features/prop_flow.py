@@ -3,17 +3,26 @@ prop flow
 """
 
 import random
-import numpy as np
 from utils.reader import read_train_file
 
-
-def _random_pick(cand, count=20):
-    if len(cand) < count:
+def _random_pick(cand, count=30):
+    if len(cand) <= count * 1.5:
         return cand
-    return set(np.random.choice(list(cand), count, replace=False))
+    
+    cand_list = list(cand)
+
+    length = len(cand)
+    result = set()
+
+    while len(result) < count:
+        c = cand_list[random.randint(0, length - 1)] 
+        if c not in result:
+            result.add(c)
+    
+    return result
 
 
-def _calc_prop_flow(key, set_dict, max_depth=3):
+def _calc_prop_flow(key, set_dict, max_depth=4):
 
     source, sink = key
 
@@ -85,10 +94,10 @@ if __name__ == '__main__':
     set_dict = read_train_file('../output/collect.txt')
 
     _prop_flow('../output/fakedataprop/fake_origin_clm.txt',
-            '../output/propflow/prop/propflow_clm_08.txt',
+            '../output/propflow/prop/propflow_clm_02.txt',
             set_dict)
 
     # test
     _prop_flow('../output/test.txt',
-            '../output/propflow/propflow_test_clm_08.txt',
+            '../output/propflow/propflow_test_clm_02.txt',
             set_dict)
